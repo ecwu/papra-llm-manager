@@ -15,7 +15,7 @@ class Config:
     # Papra config
     papra_api_token: str
     papra_org_id: str
-    papra_base_url: str = "https://vercel.ai/api"
+    papra_base_url: str = "https://demo.papra.app/api"
 
     # LLM config
     llm_provider: str = "deepseek"  # or "anthropic", "openai", "deepseek"
@@ -81,7 +81,7 @@ class Config:
         return cls(
             papra_api_token=papra_api_token,
             papra_org_id=papra_org_id,
-            papra_base_url=os.getenv("PAPRA_BASE_URL", "https://vercel.ai/api"),
+            papra_base_url=os.getenv("PAPRA_BASE_URL", "https://demo.papra.app/api"),
             llm_provider=llm_provider,
             llm_api_key=llm_api_key,
             llm_model=llm_model,

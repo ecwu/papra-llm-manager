@@ -17,7 +17,7 @@ Enhance [Papra](https://papra.app) with AI-powered features. This tool provides 
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/papra-llm-manager.git
+git clone https://github.com/ecwu/papra-llm-manager.git
 cd papra-llm-manager
 
 # Install with uv
