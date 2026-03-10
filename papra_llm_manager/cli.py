@@ -71,7 +71,6 @@ async def async_upload(file_path, org_id, extract_text, auto_tag, ocr_languages)
         doc = await client.upload_document(config.papra_org_id, file_path, ocr_languages=ocr_langs)
         click.echo(f"Uploaded document: {doc.name} (ID: {doc.id})")
         click.echo(f"  Size: {doc.size} bytes")
-        click.echo(f"  Text content: {len(doc.content)} characters")
     except PapraClientError as e:
         click.echo(f"Upload failed: {e}", err=True)
         sys.exit(1)
@@ -93,13 +92,20 @@ async def async_upload(file_path, org_id, extract_text, auto_tag, ocr_languages)
         )
         if result.success:
             click.echo("Processing complete!")
+            if result.document:
+                click.echo(f"  - Text content: {len(result.document.content)} characters")
             if result.text_extracted:
-                click.echo("  - Text extracted from image")
+                click.echo("  - Text extracted from image using LLM")
             if result.tags_added:
                 click.echo(f"  - Tags added: {', '.join(t.name for t in result.tags_added)}")
         else:
             click.echo(f"Processing failed: {result.error}", err=True)
             sys.exit(1)
+    else:
+        # If no AI processing, show text content from upload response
+        # Note: This may show 0 if Papra is still processing the document
+        click.echo(f"  Text content: {len(doc.content)} characters (may still be processing)")
+
 
 
 @cli.command()

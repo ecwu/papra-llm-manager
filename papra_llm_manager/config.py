@@ -27,18 +27,20 @@ class Config:
     max_tags: int = 5
     extract_text_threshold: int = 100  # chars below which to re-extract
     default_tag_color: str = "#3B82F6"
-    tag_colors: dict = field(default_factory=lambda: {
-        "invoice": "#EF4444",
-        "receipt": "#F59E0B",
-        "contract": "#3B82F6",
-        "report": "#10B981",
-        "personal": "#8B5CF6",
-        "work": "#EC4899",
-        "financial": "#F97316",
-        "legal": "#6366F1",
-        "medical": "#14B8A6",
-        "tax": "#DC2626",
-    })
+    tag_colors: dict = field(
+        default_factory=lambda: {
+            "invoice": "#EF4444",
+            "receipt": "#F59E0B",
+            "contract": "#3B82F6",
+            "report": "#10B981",
+            "personal": "#8B5CF6",
+            "work": "#EC4899",
+            "financial": "#F97316",
+            "legal": "#6366F1",
+            "medical": "#14B8A6",
+            "tax": "#DC2626",
+        }
+    )
 
     # Retry config
     max_retries: int = 3
@@ -59,6 +61,7 @@ class Config:
 
         papra_api_token = os.getenv("PAPRA_API_TOKEN", "")
         papra_org_id = os.getenv("PAPRA_ORG_ID", "")
+        papra_base_url = os.getenv("PAPRA_BASE_URL", "https://demo.papra.app/api")
 
         if not papra_api_token:
             raise ValueError("PAPRA_API_TOKEN environment variable is required")
@@ -77,7 +80,7 @@ class Config:
         return cls(
             papra_api_token=papra_api_token,
             papra_org_id=papra_org_id,
-            papra_base_url=os.getenv("PAPRA_BASE_URL", "https://demo.papra.app/api"),
+            papra_base_url=papra_base_url,
             llm_model=llm_model,
             llm_api_key=llm_api_key,
             llm_api_base=llm_api_base,

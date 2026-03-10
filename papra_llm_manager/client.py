@@ -1,6 +1,7 @@
 """Papra API client for interacting with the Papra service."""
 
 import asyncio
+import mimetypes
 import time
 from datetime import datetime
 from pathlib import Path
@@ -87,8 +88,10 @@ class PapraClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
-        retry=retry_if_exception_type((httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError)),
-        reraise=True
+        retry=retry_if_exception_type(
+            (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError)
+        ),
+        reraise=True,
     )
     async def _execute_request(self, method: str, url: str, **kwargs) -> httpx.Response:
         """Execute request with retries for transient HTTP errors."""
@@ -215,7 +218,9 @@ class PapraClient:
             updated_at=datetime.fromisoformat(org["updatedAt"]),
         )
 
-    async def update_organization(self, organization_id: str, name: str) -> Organization:
+    async def update_organization(
+        self, organization_id: str, name: str
+    ) -> Organization:
         """Update an organization's name.
 
         Args:
@@ -273,8 +278,6 @@ class PapraClient:
             file_hash=data.get("originalSha256Hash"),
         )
 
-
-
     async def upload_document(
         self,
         org_id: str,
@@ -298,7 +301,12 @@ class PapraClient:
         async with aiofiles.open(path, "rb") as f:
             file_data = await f.read()
 
-        files = {"file": (path.name, file_data, "application/octet-stream")}
+        # Detect MIME type from file extension
+        mime_type, _ = mimetypes.guess_type(path.name)
+        if mime_type is None:
+            mime_type = "application/octet-stream"
+
+        files = {"file": (path.name, file_data, mime_type)}
         data = {}
         if ocr_languages:
             data["ocrLanguages"] = ",".join(ocr_languages)
@@ -337,9 +345,7 @@ class PapraClient:
         )
         result = response.json()
 
-        documents = [
-            self._parse_document(doc) for doc in result.get("documents", [])
-        ]
+        documents = [self._parse_document(doc) for doc in result.get("documents", [])]
         total_count = result.get("documentsCount", 0)
 
         return documents, total_count
@@ -449,7 +455,9 @@ class PapraClient:
             org_id: The organization ID
             document_id: The document ID
         """
-        await self._request("DELETE", f"/organizations/{org_id}/documents/{document_id}")
+        await self._request(
+            "DELETE", f"/organizations/{org_id}/documents/{document_id}"
+        )
 
     async def search_documents(
         self,
@@ -480,9 +488,7 @@ class PapraClient:
         )
         result = response.json()
 
-        documents = [
-            self._parse_document(doc) for doc in result.get("documents", [])
-        ]
+        documents = [self._parse_document(doc) for doc in result.get("documents", [])]
         total_count = result.get("totalCount", 0)
 
         return documents, total_count
@@ -552,7 +558,9 @@ class PapraClient:
         if description:
             data["description"] = description
 
-        response = await self._request("POST", f"/organizations/{org_id}/tags", json=data)
+        response = await self._request(
+            "POST", f"/organizations/{org_id}/tags", json=data
+        )
         tag_data = response.json()["tag"]
 
         return Tag(

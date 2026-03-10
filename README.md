@@ -19,37 +19,36 @@ Enhance [Papra](https://papra.app) with AI-powered features. Extract text from i
 ```bash
 git clone https://github.com/ecwu/papra-llm-manager.git
 cd papra-llm-manager
-uv install
-```
-
-### Using pip
-
-```bash
-pip install papra-llm-manager
+uv sync
 ```
 
 ## Configuration
 
-Create a `.env` file or set environment variables:
+### Quick setup
 
 ```bash
-# Papra API
-PAPRA_API_TOKEN=your_papra_api_token
-PAPRA_ORG_ID=your_papra_organization_id
+# Initialize a .env file with template
+uv run papra-llm init
 
-# LLM Configuration (provider/model format)
-LLM_MODEL=anthropic/claude-3-5-sonnet-20241022
-LLM_API_KEY=your_llm_api_key
-
-# Optional: Custom API base (for Ollama, Azure, proxies)
-# LLM_API_BASE=http://localhost:11434
+# Edit .env with your credentials
+# Required: PAPRA_API_TOKEN, PAPRA_ORG_ID, LLM_MODEL, LLM_API_KEY
 ```
 
-Run `init` command to generate a template `.env` file:
+### Required environment variables
 
-```bash
-papra-llm init
-```
+- `PAPRA_API_TOKEN` - Your Papra API token
+- `PAPRA_ORG_ID` - Your Papra organization ID
+- `LLM_MODEL` - LLM model in `provider/model` format (e.g., `anthropic/claude-3-5-sonnet-20241022`)
+- `LLM_API_KEY` - API key for your LLM provider
+
+### Optional variables
+
+- `PAPRA_BASE_URL` - Papra API base URL (default: `https://demo.papra.app/api`)
+- `LLM_API_BASE` - Custom LLM API base (required for Ollama, Azure, etc.)
+- `BATCH_SIZE` - Number of documents to process concurrently (default: 10)
+- `MAX_TAGS` - Maximum tags per document (default: 5)
+
+See `.env.example` for all available options.
 
 ## Quick Start
 
@@ -57,26 +56,25 @@ papra-llm init
 
 ```bash
 # Upload with text extraction and auto-tagging
-papra-llm upload document.pdf --extract-text --auto-tag
+uv run papra-llm upload document.pdf --extract-text --auto-tag
+
+# Or just auto-tag (combines both)
+uv run papra-llm upload document.pdf --auto-tag
+
+# Search documents
+uv run papra-llm search "invoice"
+
+# List all documents
+uv run papra-llm list
 
 # Process documents with missing text
-papra-llm process-missing --batch-size 10
+uv run papra-llm process-missing --batch-size 10
 
 # Re-tag all documents
-papra-llm re-tag-all --max-tags 5
-```
+uv run papra-llm re-tag-all --max-tags 5
 
-### Using Ollama (local)
-
-```bash
-# Pull a vision model
-ollama pull llava
-ollama pull qwen2.5vl
-
-# Configure .env
-LLM_MODEL=ollama/llava
-LLM_API_BASE=http://localhost:11434
-LLM_API_KEY=any-value  # Required but unused
+# Process a specific document
+uv run papra-llm process --document-id <doc-id> --extract-text --auto-tag
 ```
 
 ## Library Usage
@@ -136,14 +134,14 @@ llm = LiteLLMProvider(
 
 | Provider | Model Format | Notes |
 |----------|--------------|-------|
-| Anthropic | `anthropic/claude-3-5-sonnet-20241022` | Default |
+| Anthropic | `anthropic/claude-3-5-sonnet-20241022` | Recommended |
+| DeepSeek | `deepseek/deepseek-chat` | Default, cost-effective |
 | OpenAI | `openai/gpt-4o` | |
-| Ollama | `ollama/llava` | Local, vision support |
+| Ollama | `ollama/llava` | Local, privacy-focused |
 | Azure OpenAI | `azure/gpt-4o` | Enterprise |
 | Google Gemini | `gemini/gemini-pro-vision` | |
-| DeepSeek | `deepseek/deepseek-chat` | |
 
-See [LiteLLM docs](https://docs.litellm.ai/docs/providers) for full list.
+See [LiteLLM docs](https://docs.litellm.ai/docs/providers) for 100+ supported providers.
 
 ## Architecture
 
