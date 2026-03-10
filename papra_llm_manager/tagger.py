@@ -8,7 +8,7 @@ import asyncio
 from typing import List, Optional
 
 from papra_llm_manager.client import PapraClient
-from papra_llm_manager.llm_handler import LLMProvider, LLMError
+from papra_llm_manager.llm_handler import LLMError, LiteLLMProvider, LLMProvider
 from papra_llm_manager.models import Tag
 
 

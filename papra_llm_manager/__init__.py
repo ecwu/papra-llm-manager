@@ -2,9 +2,11 @@
 
 This package provides tools for:
 - Uploading documents to Papra
-- Extracting text from images using LLM (Claude, GPT-4 Vision)
+- Extracting text from images using LLM (need support for vision models)
 - Intelligent tagging based on document understanding
 - Batch processing of documents
+
+Supports 100+ LLM providers via LiteLLM (OpenAI, Anthropic, Ollama, etc.)
 """
 
 from papra_llm_manager.client import (
@@ -22,12 +24,9 @@ from papra_llm_manager.exceptions import (
     ValidationError,
 )
 from papra_llm_manager.llm_handler import (
-    LLMProvider,
     LLMError,
-    AnthropicProvider,
-    OpenAIProvider,
-    DeepSeekProvider,
-    create_llm_provider,
+    LLMProvider,
+    LiteLLMProvider,
 )
 from papra_llm_manager.models import (
     Document,
@@ -61,11 +60,9 @@ __all__ = [
     "LLMProviderError",
     "ValidationError",
     # LLM Handler
+    "LiteLLMProvider",
     "LLMProvider",
     "LLMError",
-    "AnthropicProvider",
-    "OpenAIProvider",
-    "create_llm_provider",
     # Models
     "Document",
     "Tag",

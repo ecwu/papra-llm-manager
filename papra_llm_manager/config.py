@@ -17,10 +17,10 @@ class Config:
     papra_org_id: str
     papra_base_url: str = "https://demo.papra.app/api"
 
-    # LLM config
-    llm_provider: str = "deepseek"  # or "anthropic", "openai", "deepseek"
+    # LLM config (using LiteLLM - model format: provider/model, e.g., "ollama/gpt-oss:20b")
+    llm_model: str = "deepseek/deepseek-chat"
     llm_api_key: str = ""
-    llm_model: str = ""
+    llm_api_base: str = ""  # e.g., "http://localhost:11434" for Ollama
 
     # Processing config
     batch_size: int = 10
@@ -65,26 +65,22 @@ class Config:
         if not papra_org_id:
             raise ValueError("PAPRA_ORG_ID environment variable is required")
 
-        # Get LLM config
-        llm_provider = os.getenv("LLM_PROVIDER", "deepseek")
+        # Get LLM config (LiteLLM format: provider/model)
+        llm_model = os.getenv("LLM_MODEL", "deepseek/deepseek-chat")
         llm_api_key = os.getenv("LLM_API_KEY", "")
-        llm_model = os.getenv("LLM_MODEL", "")
+        llm_api_base = os.getenv("LLM_API_BASE", "")
 
-        # Handle DeepSeek provider with specific env vars
-        if llm_provider == "deepseek":
-            if not llm_api_key:
-                # Try DEEPSEEK_API_KEY or SILICONFLOW_API_KEY
-                llm_api_key = os.getenv("DEEPSEEK_API_KEY", "")
-                if not llm_api_key:
-                    llm_api_key = os.getenv("SILICONFLOW_API_KEY", "")
+        # Fallback to DEEPSEEK_API_KEY if LLM_API_KEY not set
+        if not llm_api_key:
+            llm_api_key = os.getenv("DEEPSEEK_API_KEY", "")
 
         return cls(
             papra_api_token=papra_api_token,
             papra_org_id=papra_org_id,
             papra_base_url=os.getenv("PAPRA_BASE_URL", "https://demo.papra.app/api"),
-            llm_provider=llm_provider,
-            llm_api_key=llm_api_key,
             llm_model=llm_model,
+            llm_api_key=llm_api_key,
+            llm_api_base=llm_api_base,
             batch_size=int(os.getenv("BATCH_SIZE", "10")),
             max_tags=int(os.getenv("MAX_TAGS", "5")),
             extract_text_threshold=int(os.getenv("EXTRACT_TEXT_THRESHOLD", "100")),

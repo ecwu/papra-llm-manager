@@ -1,0 +1,5 @@
+Extract all text from this document/image. Document name: {document_name}
+
+Provide the complete, accurate text content. Maintain the structure and formatting as much as possible. If this is a form, invoice, receipt, or similar document, extract all fields, dates, amounts, and line items accurately.
+
+Return only the extracted text, no explanations or commentary.

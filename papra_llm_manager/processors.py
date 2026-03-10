@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional
 from PIL import Image
 
 from papra_llm_manager.client import PapraClient
-from papra_llm_manager.llm_handler import LLMProvider, LLMError
+from papra_llm_manager.llm_handler import LLMError, LLMProvider
 from papra_llm_manager.models import Document, ProcessingResult, Tag
 
 if TYPE_CHECKING:

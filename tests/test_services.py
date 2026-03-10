@@ -11,9 +11,9 @@ def mock_config():
     config = Mock(spec=Config)
     config.papra_api_token = "test_token"
     config.papra_base_url = "https://api.test.com"
-    config.llm_provider = "anthropic"
+    config.llm_model = "anthropic/claude-3-5-sonnet-20241022"
     config.llm_api_key = "llm_key"
-    config.llm_model = "claude-3"
+    config.llm_api_base = None
     config.extract_text_threshold = 100
     config.max_tags = 5
     config.tag_colors = {}
@@ -27,13 +27,18 @@ def test_create_client(mock_config):
 
 
 def test_create_llm_handler(mock_config):
-    with patch('papra_llm_manager.services.create_llm_provider') as mock_create_llm:
+    with patch('papra_llm_manager.services.LiteLLMProvider') as MockLiteLLM:
         mock_llm = Mock()
-        mock_create_llm.return_value = mock_llm
+        MockLiteLLM.return_value = mock_llm
 
         llm = PapraServiceFactory.create_llm_handler(mock_config)
 
-        mock_create_llm.assert_called_once()
+        MockLiteLLM.assert_called_once_with(
+            model="anthropic/claude-3-5-sonnet-20241022",
+            api_key="llm_key",
+            api_base=None,
+            max_tokens=8192,
+        )
         assert llm == mock_llm
 
 

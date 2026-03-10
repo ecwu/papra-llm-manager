@@ -1,0 +1,34 @@
+Extract structured metadata from this document.
+
+Document name: {document_name}
+
+Document content:
+{text}
+
+Extract the following metadata fields if present:
+- title: Document title or subject
+- date: Any dates found (ISO format YYYY-MM-DD preferred)
+- amount: Any monetary amounts or numbers
+- company: Company or organization names
+- person: Person names
+- location: Locations, addresses, places
+- phone: Phone numbers
+- email: Email addresses
+- document_type: Type of document (invoice, receipt, contract, etc.)
+- status: Status if applicable (draft, final, paid, pending, etc.)
+- reference: Reference numbers, IDs, invoice numbers, etc.
+
+Return as JSON object. Use null for missing fields:
+{{
+  "title": null,
+  "date": null,
+  "amount": null,
+  "company": null,
+  "person": null,
+  "location": null,
+  "phone": null,
+  "email": null,
+  "document_type": null,
+  "status": null,
+  "reference": null
+}}

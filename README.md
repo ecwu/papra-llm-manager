@@ -1,13 +1,14 @@
 # papra-llm-manager
 
-Enhance [Papra](https://papra.app) with AI-powered features. This tool provides intelligent text extraction from images and documents using LLMs (Claude, GPT-4 Vision), and automatic tagging based on document understanding.
+Enhance [Papra](https://papra.app) with AI-powered features. Extract text from images using vision-enabled LLMs and automatically tag documents based on content understanding.
 
 ## Features
 
-- **LLM-powered text extraction**: Extract text from images and documents when OCR fails
-- **Intelligent tagging**: Generate and apply tags based on document content understanding
+- **Vision-powered text extraction**: Extract text from images using Claude, GPT-4, or local models
+- **Intelligent tagging**: Generate and apply tags based on document content
+- **100+ LLM providers**: Use any LiteLLM-supported provider (Anthropic, OpenAI, Ollama, Azure, etc.)
+- **Local models**: Run locally with Ollama for privacy and cost savings
 - **Batch processing**: Process multiple documents concurrently
-- **Multi-provider support**: Works with Anthropic Claude and OpenAI GPT-4
 - **CLI tool**: Easy-to-use command-line interface
 - **Python library**: Use as a library in your own applications
 
@@ -16,11 +17,8 @@ Enhance [Papra](https://papra.app) with AI-powered features. This tool provides 
 ### Using uv (recommended)
 
 ```bash
-# Clone the repository
 git clone https://github.com/ecwu/papra-llm-manager.git
 cd papra-llm-manager
-
-# Install with uv
 uv install
 ```
 
@@ -35,16 +33,16 @@ pip install papra-llm-manager
 Create a `.env` file or set environment variables:
 
 ```bash
-# Papra API Configuration
-PAPAPRA_API_TOKEN=your_papra_api_token
+# Papra API
+PAPRA_API_TOKEN=your_papra_api_token
 PAPRA_ORG_ID=your_papra_organization_id
 
-# LLM Provider Configuration (choose one)
-LLM_PROVIDER=anthropic  # or 'openai'
+# LLM Configuration (provider/model format)
+LLM_MODEL=anthropic/claude-3-5-sonnet-20241022
 LLM_API_KEY=your_llm_api_key
 
-# Optional: Specify model
-# LLM_MODEL=claude-3-5-sonnet-20241022
+# Optional: Custom API base (for Ollama, Azure, proxies)
+# LLM_API_BASE=http://localhost:11434
 ```
 
 Run `init` command to generate a template `.env` file:
@@ -53,46 +51,32 @@ Run `init` command to generate a template `.env` file:
 papra-llm init
 ```
 
-## CLI Usage
+## Quick Start
 
-### Upload a document with AI enhancements
+### CLI Usage
 
 ```bash
 # Upload with text extraction and auto-tagging
 papra-llm upload document.pdf --extract-text --auto-tag
 
-# Upload with OCR languages
-papra-llm upload receipt.jpg --extract-text --auto-tag --ocr-languages "eng,fra"
-```
-
-### Process documents
-
-```bash
-# Process all documents with missing text
+# Process documents with missing text
 papra-llm process-missing --batch-size 10
 
-# Process a specific document
-papra-llm process --document-id doc_123
-
-# Process all documents (extract text + auto-tag)
-papra-llm process
+# Re-tag all documents
+papra-llm re-tag-all --max-tags 5
 ```
 
-### Tag documents
+### Using Ollama (local)
 
 ```bash
-# Re-tag all documents using LLM
-papra-llm re-tag-all --max-tags 5 --batch-size 10
-```
+# Pull a vision model
+ollama pull llava
+ollama pull qwen2.5vl
 
-### List and search
-
-```bash
-# List all documents
-papra-llm list
-
-# Search documents
-papra-llm search "invoice"
+# Configure .env
+LLM_MODEL=ollama/llava
+LLM_API_BASE=http://localhost:11434
+LLM_API_KEY=any-value  # Required but unused
 ```
 
 ## Library Usage
@@ -101,25 +85,15 @@ papra-llm search "invoice"
 
 ```python
 import asyncio
-from papra_llm_manager import Config, PapraClient, AnthropicProvider, DocumentProcessor
+from papra_llm_manager import Config, PapraServiceFactory, DocumentProcessor
 
 async def main():
-    # Load configuration
     config = Config.from_env()
+    client = PapraServiceFactory.create_client(config)
+    llm = PapraServiceFactory.create_llm_handler(config)
+    processor = DocumentProcessor(papra_client=client, llm_handler=llm)
 
-    # Initialize client and LLM
-    client = PapraClient(api_token=config.papra_api_token)
-    llm = AnthropicProvider(api_key=config.llm_api_key)
-
-    # Create processor
-    processor = DocumentProcessor(
-        papra_client=client,
-        llm_handler=llm,
-        extract_text_threshold=100,
-        max_tags=5,
-    )
-
-    # Upload and process a document
+    # Upload and process
     doc = await client.upload_document(config.papra_org_id, "invoice.pdf")
     result = await processor.process_document(
         org_id=config.papra_org_id,
@@ -127,122 +101,58 @@ async def main():
         extract_text=True,
         generate_tags=True,
     )
-
-    print(f"Success: {result.success}")
-    print(f"Tags added: {[t.name for t in result.tags_added]}")
+    print(f"Tags: {[t.name for t in result.tags_added]}")
 
 asyncio.run(main())
 ```
 
-### Advanced usage
+### Using LiteLLM directly
 
 ```python
-import asyncio
-from papra_llm_manager import Config, PapraClient, DocumentTagger, AnthropicProvider
+from papra_llm_manager import LiteLLMProvider
 
-async def main():
-    config = Config.from_env()
-    client = PapraClient(api_token=config.papra_api_token)
-    llm = AnthropicProvider(api_key=config.llm_api_key)
+# Any LiteLLM-supported model
+llm = LiteLLMProvider(
+    model="anthropic/claude-3-5-sonnet-20241022",
+    api_key="sk-...",
+)
 
-    # Create custom tagger with custom colors
-    tag_colors = {
-        "invoice": "#EF4444",
-        "receipt": "#F59E0B",
-        "contract": "#3B82F6",
-    }
+# Local Ollama
+llm = LiteLLMProvider(
+    model="ollama/llava",
+    api_key="unused",
+    api_base="http://localhost:11434",
+)
 
-    tagger = DocumentTagger(
-        papra_client=client,
-        llm_handler=llm,
-        tag_colors=tag_colors,
-    )
-
-    # Re-tag all documents
-    stats = await tagger.re_tag_all_documents(
-        org_id=config.papra_org_id,
-        max_tags=5,
-        batch_size=10,
-    )
-
-    print(f"Processed: {stats['processed']} documents")
-    print(f"Tags added: {stats['tags_added']}")
-
-asyncio.run(main())
-```
-
-## LLM Providers
-
-### Anthropic Claude
-
-```python
-from papra_llm_manager import AnthropicProvider
-
-llm = AnthropicProvider(
-    api_key="your_anthropic_api_key",
-    model="claude-3-5-sonnet-20241022",  # Default
+# Azure OpenAI
+llm = LiteLLMProvider(
+    model="azure/gpt-4o",
+    api_key="your-azure-key",
+    api_base="https://your-resource.openai.azure.com",
 )
 ```
 
-### OpenAI GPT-4
+## Supported Providers
 
-```python
-from papra_llm_manager import OpenAIProvider
+| Provider | Model Format | Notes |
+|----------|--------------|-------|
+| Anthropic | `anthropic/claude-3-5-sonnet-20241022` | Default |
+| OpenAI | `openai/gpt-4o` | |
+| Ollama | `ollama/llava` | Local, vision support |
+| Azure OpenAI | `azure/gpt-4o` | Enterprise |
+| Google Gemini | `gemini/gemini-pro-vision` | |
+| DeepSeek | `deepseek/deepseek-chat` | |
 
-llm = OpenAIProvider(
-    api_key="your_openai_api_key",
-    model="gpt-4o",  # Default
-)
-```
+See [LiteLLM docs](https://docs.litellm.ai/docs/providers) for full list.
 
-### Factory function
+## Architecture
 
-```python
-from papra_llm_manager import create_llm_provider
-
-llm = create_llm_provider(
-    provider="anthropic",  # or "openai"
-    api_key="your_api_key",
-    model="claude-3-5-sonnet-20241022",
-)
-```
-
-## API Reference
-
-### PapraClient
-
-Main client for interacting with Papra API.
-
-- `upload_document(org_id, file_path, ocr_languages)` - Upload a document
-- `list_documents(org_id, page_index, page_size, tag_ids)` - List documents
-- `get_document(org_id, document_id)` - Get a document
-- `update_document_content(org_id, document_id, content, name)` - Update document
-- `delete_document(org_id, document_id)` - Delete a document
-- `search_documents(org_id, search_query, page_index, page_size)` - Search documents
-- `list_tags(org_id)` - List all tags
-- `create_tag(org_id, name, color, description)` - Create a tag
-- `add_tag_to_document(org_id, document_id, tag_id)` - Add tag to document
-
-### DocumentProcessor
-
-Process documents with LLM capabilities.
-
-- `process_document(org_id, document_id, extract_text, generate_tags)` - Process a document
-- `process_missing_text(org_id, batch_size)` - Process documents with missing text
-- `process_all(org_id, batch_size, extract_text, generate_tags)` - Process all documents
-
-### DocumentTagger
-
-Intelligent tagging system.
-
-- `tag_document(org_id, document_id, text, document_name, max_tags)` - Tag a document
-- `re_tag_all_documents(org_id, max_tags, batch_size)` - Re-tag all documents
-- `sync_tags_to_papra(org_id, tag_names, tag_color)` - Sync tags to Papra
+- `LiteLLMProvider` - Unified LLM interface via [LiteLLM](https://litellm.ai)
+- `DocumentProcessor` - Orchestrates text extraction and tagging
+- `DocumentTagger` - AI-powered tagging system
+- `PapraClient` - Async client for Papra API
+- Prompts are stored in `papra_llm_manager/prompts/`
 
 ## License
 
-MIT License
-
-## Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request.
+MIT

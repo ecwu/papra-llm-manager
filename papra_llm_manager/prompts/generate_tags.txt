@@ -1,0 +1,17 @@
+Generate {max_tags} relevant tags for this document.
+
+Document name: {document_name}
+Existing tags: {existing_tags}
+
+Document content:
+{text}
+
+Rules:
+- Generate {max_tags} or fewer tags
+- Use simple, clear tag names (1-3 words each)
+- Avoid tags that already exist in the existing tags list
+- Focus on document type, category, and key themes
+- Common useful tags: invoice, receipt, contract, report, personal, work, financial, legal, tax, medical, insurance, bank, utility, statement, form, application, certificate, license, diploma, transcript, resume, portfolio, project, proposal, presentation, manual, guide, policy, procedure, memo, notice, announcement, newsletter, article, blog, research, paper, thesis, dissertation, book, chapter, essay, story, poem, script, lyrics, code, config, log, data, database, spreadsheet, chart, graph, diagram, map, plan, design, sketch, drawing, painting, photo, image, screenshot, scan, print, copy, draft, final, version, revision, update, archive, backup, restore, import, export, sync, upload, download, share, send, receive, forward, reply, attachment, link, reference, citation, quote, note, comment, annotation, highlight, bookmark, tag, label, category, folder, directory, collection, album, playlist, channel, feed, stream, video, audio, podcast, broadcast, live, recording, transcript, subtitle, caption, translation
+
+Return the tags as a JSON array of strings, like:
+["tag1", "tag2", "tag3"]

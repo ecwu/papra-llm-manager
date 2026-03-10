@@ -4,7 +4,9 @@ from typing import TYPE_CHECKING, Optional
 
 from papra_llm_manager.config import Config
 from papra_llm_manager.client import PapraClient
-from papra_llm_manager.llm_handler import LLMProvider, create_llm_provider
+from papra_llm_manager.llm_handler import LLMError, LiteLLMProvider
+
+LLMProvider = LiteLLMProvider
 from papra_llm_manager.processors import DocumentProcessor
 
 if TYPE_CHECKING:
@@ -30,19 +32,19 @@ class PapraServiceFactory:
         )
 
     @staticmethod
-    def create_llm_handler(config: Config) -> LLMProvider:
+    def create_llm_handler(config: Config) -> LiteLLMProvider:
         """Create an LLM handler from configuration.
 
         Args:
             config: Configuration object
 
         Returns:
-            LLMProvider: Configured LLM handler
+            LiteLLMProvider: Configured LLM handler
         """
-        return create_llm_provider(
-            provider=config.llm_provider,
+        return LiteLLMProvider(
+            model=config.llm_model,
             api_key=config.llm_api_key,
-            model=config.llm_model if config.llm_model else None,
+            api_base=config.llm_api_base,
             max_tokens=8192,
         )
 
