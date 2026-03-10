@@ -54,8 +54,12 @@ def get_llm_handler(config: Config):
 @click.argument("file_path", type=click.Path(exists=True))
 @click.option("--org-id", help="Papra organization ID (overrides PAPRA_ORG_ID)")
 @click.option("--extract-text", is_flag=True, help="Use LLM to extract text if needed")
-@click.option("--auto-tag", is_flag=True, help="Auto-tag the document using LLM understanding")
-@click.option("--ocr-languages", help="OCR languages for initial extraction (comma-separated)")
+@click.option(
+    "--auto-tag", is_flag=True, help="Auto-tag the document using LLM understanding"
+)
+@click.option(
+    "--ocr-languages", help="OCR languages for initial extraction (comma-separated)"
+)
 def upload(file_path, org_id, extract_text, auto_tag, ocr_languages):
     """Upload a document with optional AI enhancements."""
     asyncio.run(async_upload(file_path, org_id, extract_text, auto_tag, ocr_languages))
@@ -67,8 +71,14 @@ async def async_upload(file_path, org_id, extract_text, auto_tag, ocr_languages)
     client = get_papra_client(config)
 
     try:
-        ocr_langs = [lang.strip() for lang in ocr_languages.split(",")] if ocr_languages else None
-        doc = await client.upload_document(config.papra_org_id, file_path, ocr_languages=ocr_langs)
+        ocr_langs = (
+            [lang.strip() for lang in ocr_languages.split(",")]
+            if ocr_languages
+            else None
+        )
+        doc = await client.upload_document(
+            config.papra_org_id, file_path, ocr_languages=ocr_langs
+        )
         click.echo(f"Uploaded document: {doc.name} (ID: {doc.id})")
         click.echo(f"  Size: {doc.size} bytes")
     except PapraClientError as e:
@@ -93,24 +103,31 @@ async def async_upload(file_path, org_id, extract_text, auto_tag, ocr_languages)
         if result.success:
             click.echo("Processing complete!")
             if result.document:
-                click.echo(f"  - Text content: {len(result.document.content)} characters")
+                click.echo(
+                    f"  - Text content: {len(result.document.content)} characters"
+                )
             if result.text_extracted:
                 click.echo("  - Text extracted from image using LLM")
             if result.tags_added:
-                click.echo(f"  - Tags added: {', '.join(t.name for t in result.tags_added)}")
+                click.echo(
+                    f"  - Tags added: {', '.join(t.name for t in result.tags_added)}"
+                )
         else:
             click.echo(f"Processing failed: {result.error}", err=True)
             sys.exit(1)
     else:
         # If no AI processing, show text content from upload response
         # Note: This may show 0 if Papra is still processing the document
-        click.echo(f"  Text content: {len(doc.content)} characters (may still be processing)")
-
+        click.echo(
+            f"  Text content: {len(doc.content)} characters (may still be processing)"
+        )
 
 
 @cli.command()
 @click.option("--org-id", help="Papra organization ID (overrides PAPRA_ORG_ID)")
-@click.option("--batch-size", default=10, help="Number of documents to process concurrently")
+@click.option(
+    "--batch-size", default=10, help="Number of documents to process concurrently"
+)
 def process_missing(org_id, batch_size):
     """Process all documents with missing text content."""
     asyncio.run(async_process_missing(org_id, batch_size))
@@ -118,7 +135,9 @@ def process_missing(org_id, batch_size):
 
 async def async_process_missing(org_id, batch_size):
     config = get_config(org_id)
-    click.echo(f"Processing documents with missing text in organization {config.papra_org_id}...")
+    click.echo(
+        f"Processing documents with missing text in organization {config.papra_org_id}..."
+    )
     client = get_papra_client(config)
     llm = get_llm_handler(config)
     processor = DocumentProcessor(
@@ -136,7 +155,9 @@ async def async_process_missing(org_id, batch_size):
 
 @cli.command()
 @click.option("--org-id", help="Papra organization ID (overrides PAPRA_ORG_ID)")
-@click.option("--batch-size", default=10, help="Number of documents to process concurrently")
+@click.option(
+    "--batch-size", default=10, help="Number of documents to process concurrently"
+)
 @click.option("--max-tags", default=5, help="Maximum number of tags per document")
 def re_tag_all(org_id, batch_size, max_tags):
     """Re-tag all documents using LLM understanding."""
@@ -149,6 +170,7 @@ async def async_re_tag_all(org_id, batch_size, max_tags):
     client = get_papra_client(config)
     llm = get_llm_handler(config)
     from papra_llm_manager.tagger import DocumentTagger
+
     tagger = DocumentTagger(
         papra_client=client,
         llm_handler=llm,
@@ -204,7 +226,9 @@ async def async_process(org_id, document_id, extract_text, auto_tag):
             if result.text_extracted:
                 click.echo("  - Text extracted from image")
             if result.tags_added:
-                click.echo(f"  - Tags added: {', '.join(t.name for t in result.tags_added)}")
+                click.echo(
+                    f"  - Tags added: {', '.join(t.name for t in result.tags_added)}"
+                )
         else:
             click.echo(f"Processing failed: {result.error}", err=True)
             sys.exit(1)
@@ -220,7 +244,11 @@ async def async_process(org_id, document_id, extract_text, auto_tag):
 
 @cli.command()
 @click.option("--org-id", help="Papra organization ID (overrides PAPRA_ORG_ID)")
-@click.option("--show-content", is_flag=True, help="Fetch full document content to show text length")
+@click.option(
+    "--show-content",
+    is_flag=True,
+    help="Fetch full document content to show text length",
+)
 def list(org_id, show_content):
     """List all documents in the organization."""
     asyncio.run(async_list(org_id, show_content))
@@ -240,7 +268,9 @@ async def async_list(org_id, show_content):
             click.echo(f"    ID: {doc.id}")
             if show_content:
                 full_doc = await client.get_document(config.papra_org_id, doc.id)
-                click.echo(f"    Text: {len(full_doc.content)} chars | Tags: {tags_str}")
+                click.echo(
+                    f"    Text: {len(full_doc.content)} chars | Tags: {tags_str}"
+                )
             else:
                 click.echo(f"    Size: {doc.size} bytes | Tags: {tags_str}")
         if total > 50:
@@ -316,7 +346,9 @@ LLM_API_KEY=your_llm_api_key_here
 # EXTRACT_TEXT_THRESHOLD=100
 """
     env_file.write_text(env_content)
-    click.echo("Created .env file. Please edit it with your API tokens and organization ID.")
+    click.echo(
+        "Created .env file. Please edit it with your API tokens and organization ID."
+    )
 
 
 def main():
