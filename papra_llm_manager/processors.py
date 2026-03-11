@@ -15,7 +15,8 @@ from PIL import Image
 
 from papra_llm_manager.client import PapraClient
 from papra_llm_manager.llm_handler import LLMError, LLMProvider
-from papra_llm_manager.models import Document, ProcessingResult, Tag
+from papra_llm_manager.logger import logger
+from papra_llm_manager.models import Document, ProcessingResult
 
 if TYPE_CHECKING:
     from papra_llm_manager.tagger import DocumentTagger
@@ -49,11 +50,12 @@ class DocumentProcessor:
         self.llm = llm_handler
         self.extract_text_threshold = extract_text_threshold
         self.max_tags = max_tags
-        
+
         if tagger is not None:
             self.tagger = tagger
         else:
             from papra_llm_manager.tagger import DocumentTagger
+
             self.tagger = DocumentTagger(
                 papra_client=papra_client,
                 llm_handler=llm_handler,
@@ -112,7 +114,7 @@ class DocumentProcessor:
             needs_text = extract_text and self._should_extract_text(doc)
 
             if needs_text:
-                print(f"  Extracting text for document: {doc.name}")
+                logger.info(f"Extracting text for document: {doc.name}")
                 extracted_text = await self._extract_text_from_document(
                     org_id, document_id, doc
                 )
@@ -129,7 +131,7 @@ class DocumentProcessor:
 
             # Generate and apply tags
             if generate_tags and doc.has_text:
-                print(f"  Generating tags for document: {doc.name}")
+                logger.info(f"Generating tags for document: {doc.name}")
                 tags = await self.tagger.tag_document(
                     org_id=org_id,
                     document_id=document_id,
@@ -142,18 +144,18 @@ class DocumentProcessor:
             # Extract metadata
             if extract_metadata and doc.has_text:
                 try:
-                    print(f"  Extracting metadata for document: {doc.name}")
+                    logger.info(f"Extracting metadata for document: {doc.name}")
                     metadata = await self._extract_metadata_from_document(doc)
                     result.metadata_extracted = metadata
                 except LLMError as e:
-                    print(f"  Warning: Failed to extract metadata: {e}")
+                    logger.warning(f"Failed to extract metadata: {e}")
 
             result.success = True
             return result
 
         except Exception as e:
             result.error = str(e)
-            print(f"  Error processing document {document_id}: {e}")
+            logger.error(f"Error processing document {document_id}: {e}")
             return result
 
     async def _extract_text_from_document(
@@ -188,17 +190,19 @@ class DocumentProcessor:
                 return extracted_text.strip() if extracted_text else None
 
             except Exception as e:
-                print(f"    Warning: Could not open as image: {e}")
+                logger.warning(f"Could not open as image: {e}")
                 return None
 
         except LLMError as e:
-            print(f"    Warning: LLM text extraction failed: {e}")
+            logger.warning(f"LLM text extraction failed: {e}")
             return None
         except Exception as e:
-            print(f"    Warning: Text extraction failed: {e}")
+            logger.warning(f"Text extraction failed: {e}")
             return None
 
-    async def _extract_text_from_pdf(self, file_content: bytes, doc: Document) -> Optional[str]:
+    async def _extract_text_from_pdf(
+        self, file_content: bytes, doc: Document
+    ) -> Optional[str]:
         """Extract text from a PDF using LLM.
 
         Args:
@@ -211,14 +215,14 @@ class DocumentProcessor:
         try:
             from pdf2image import convert_from_bytes
 
-            print(f"    Converting PDF to images...")
+            logger.debug("Converting PDF to images...")
             images = convert_from_bytes(file_content, dpi=200)
 
             if not images:
-                print(f"    Warning: No images extracted from PDF")
+                logger.warning("No images extracted from PDF")
                 return None
 
-            print(f"    Extracting text from {len(images)} page(s)...")
+            logger.info(f"Extracting text from {len(images)} page(s)...")
             all_text = []
 
             for idx, image in enumerate(images, 1):
@@ -231,10 +235,12 @@ class DocumentProcessor:
             return "\n\n".join(all_text) if all_text else None
 
         except ImportError:
-            print(f"    Warning: pdf2image not installed. Install with: pip install pdf2image")
+            logger.warning(
+                f"pdf2image not installed. Install with: pip install pdf2image"
+            )
             return None
         except Exception as e:
-            print(f"    Warning: Failed to extract text from PDF: {e}")
+            logger.warning(f"Failed to extract text from PDF: {e}")
             return None
 
     async def _extract_metadata_from_document(self, doc: Document) -> dict:
@@ -246,9 +252,7 @@ class DocumentProcessor:
         Returns:
             dict: Extracted metadata
         """
-        return await self.llm.extract_metadata(
-            text=doc.content, document_name=doc.name
-        )
+        return await self.llm.extract_metadata(text=doc.content, document_name=doc.name)
 
     async def process_missing_text(
         self,
@@ -264,7 +268,7 @@ class DocumentProcessor:
         Returns:
             List[ProcessingResult]: Results of all processing operations
         """
-        print(f"Scanning for documents needing text extraction...")
+        logger.info("Scanning for documents needing text extraction...")
         return await self._process_documents(
             org_id=org_id,
             batch_size=batch_size,
@@ -303,7 +307,7 @@ class DocumentProcessor:
             )
 
             if page_index == 0:
-                print(f"Found {total_count} total documents")
+                logger.info(f"Found {total_count} total documents")
 
             if not documents:
                 break
@@ -317,9 +321,13 @@ class DocumentProcessor:
 
             if to_process:
                 if filter_func:
-                    print(f"  Page {page_index}: {len(to_process)} documents need processing")
+                    logger.debug(
+                        f"Page {page_index}: {len(to_process)} documents need processing"
+                    )
                 else:
-                    print(f"  Processing page {page_index}: {len(to_process)} documents")
+                    logger.info(
+                        f"Processing page {page_index}: {len(to_process)} documents"
+                    )
 
                 # Process in batches
                 for i in range(0, len(to_process), batch_size):
@@ -358,7 +366,7 @@ class DocumentProcessor:
         Returns:
             List[ProcessingResult]: Results of all processing operations
         """
-        print(f"Processing all documents in organization {org_id}...")
+        logger.info(f"Processing all documents in organization {org_id}...")
         return await self._process_documents(
             org_id=org_id,
             batch_size=batch_size,
@@ -379,10 +387,10 @@ class DocumentProcessor:
         text_extracted = sum(1 for r in results if r.text_extracted)
         total_tags_added = sum(len(r.tags_added) for r in results)
 
-        print("\n=== Processing Summary ===")
-        print(f"Total documents processed: {total}")
-        print(f"Successful: {successful}")
-        print(f"Failed: {failed}")
-        print(f"Text extracted: {text_extracted}")
-        print(f"Total tags added: {total_tags_added}")
-        print(f"========================")
+        logger.info("\n=== Processing Summary ===")
+        logger.info(f"Total documents processed: {total}")
+        logger.info(f"Successful: {successful}")
+        logger.info(f"Failed: {failed}")
+        logger.info(f"Text extracted: {text_extracted}")
+        logger.info(f"Total tags added: {total_tags_added}")
+        logger.info("========================")

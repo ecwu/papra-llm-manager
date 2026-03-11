@@ -9,6 +9,7 @@ import click
 
 from papra_llm_manager.client import PapraClient, PapraClientError
 from papra_llm_manager.config import Config
+from papra_llm_manager.logger import logger  # noqa: F401 - Initialize logging system
 from papra_llm_manager.services import PapraServiceFactory
 from papra_llm_manager.processors import DocumentProcessor
 from papra_llm_manager.tagger import DocumentTagger

@@ -47,8 +47,25 @@ uv run papra-llm init
 - `LLM_API_BASE` - Custom LLM API base (required for Ollama, Azure, etc.)
 - `BATCH_SIZE` - Number of documents to process concurrently (default: 10)
 - `MAX_TAGS` - Maximum tags per document (default: 5)
+- `LOG_LEVEL` - Logging level: `DEBUG`, `INFO`, `WARNING`, `ERROR` (default: `INFO`)
 
 See `.env.example` for all available options.
+
+### Logging
+
+The application uses [loguru](https://github.com/Delgan/loguru) for structured logging. By default, log level is set to `INFO`, which hides detailed `DEBUG` messages.
+
+To see more detailed logs (including debug information):
+```bash
+export LOG_LEVEL=DEBUG
+uv run papra-llm upload document.pdf --auto-tag
+```
+
+To see only warnings and errors:
+```bash
+export LOG_LEVEL=WARNING
+uv run papra-llm upload document.pdf --auto-tag
+```
 
 ## Quick Start
 

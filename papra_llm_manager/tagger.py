@@ -9,6 +9,7 @@ from typing import List, Optional
 
 from papra_llm_manager.client import PapraClient
 from papra_llm_manager.llm_handler import LLMError, LiteLLMProvider, LLMProvider
+from papra_llm_manager.logger import logger
 from papra_llm_manager.models import Tag
 
 
@@ -110,7 +111,7 @@ class DocumentTagger:
             return tags
         except LLMError as e:
             # Log error but don't fail - return empty list
-            print(f"Warning: Failed to generate tags: {e}")
+            logger.warning(f"Failed to generate tags: {e}")
             return []
 
     async def tag_document(
@@ -150,7 +151,7 @@ class DocumentTagger:
             existing_tag_names = [tag.name.lower() for tag in doc.tags]
             existing_tag_ids = {tag.name.lower(): tag.id for tag in doc.tags}
         except Exception as e:
-            print(f"Warning: Could not fetch document: {e}")
+            logger.warning(f"Could not fetch document: {e}")
 
         # Get all tags in org for context
         org_tags = await self.papra.list_tags(org_id)
@@ -166,7 +167,9 @@ class DocumentTagger:
 
         # Filter out tags document already has
         new_tag_names = [
-            name for name in generated_tag_names if name.lower() not in existing_tag_names
+            name
+            for name in generated_tag_names
+            if name.lower() not in existing_tag_names
         ]
 
         if not new_tag_names:
@@ -217,7 +220,9 @@ class DocumentTagger:
 
         # Filter out tags document already has
         new_tag_names = [
-            name for name in generated_tag_names if name.lower() not in existing_tag_names
+            name
+            for name in generated_tag_names
+            if name.lower() not in existing_tag_names
         ]
 
         if not new_tag_names:
@@ -280,7 +285,7 @@ class DocumentTagger:
                     full_doc = await self.papra.get_document(org_id, doc.id)
                     full_documents.append(full_doc)
                 except Exception as e:
-                    print(f"Warning: Could not fetch document {doc.id}: {e}")
+                    logger.warning(f"Could not fetch document {doc.id}: {e}")
 
             # Process in batches
             for i in range(0, len(full_documents), batch_size):
@@ -317,11 +322,7 @@ class DocumentTagger:
                 stats["skipped"] += 1
                 continue
 
-            tasks.append(
-                self._safe_tag_document(
-                    org_id, doc, max_tags, stats
-                )
-            )
+            tasks.append(self._safe_tag_document(org_id, doc, max_tags, stats))
 
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -351,5 +352,5 @@ class DocumentTagger:
             stats["processed"] += 1
             stats["tags_added"] += len(tags) - old_tag_count
         except Exception as e:
-            print(f"Error tagging document {doc.id} ({doc.name}): {e}")
+            logger.error(f"Error tagging document {doc.id} ({doc.name}): {e}")
             stats["errors"] += 1
